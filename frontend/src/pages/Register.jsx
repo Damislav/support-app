@@ -4,6 +4,8 @@ import { toast } from "react-toastify";
 import { useSelector, useDispatch } from "react-redux";
 import { register } from "../features/authSlice";
 import { useNavigate } from "react-router-dom";
+import { reset } from "../features/authSlice";
+import Spinner from "../components/Spinner";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -51,6 +53,9 @@ const Register = () => {
       dispatch(register(userData));
     }
   };
+  if (isLoading) {
+    return <Spinner />;
+  }
   return (
     <>
       <section className="heading">
@@ -86,8 +91,9 @@ const Register = () => {
             <div className="form-group">
               <input
                 required
+                type="password"
+                value={password}
                 onChange={onChange}
-                type={password}
                 name="password"
                 id="password"
                 className="form-control"
@@ -98,7 +104,8 @@ const Register = () => {
               <input
                 required
                 onChange={onChange}
-                type={password2}
+                type="password"
+                value={password2}
                 name="password2"
                 id="password2"
                 className="form-control"
