@@ -1,94 +1,103 @@
-import React, { useEffect, useState } from "react";
-import { FaSignInAlt } from "react-icons/fa";
+import { useState } from "react";
 import { toast } from "react-toastify";
-import { useSelector, useDispatch } from "react-redux";
-import { login, reset } from "../features/authSlice";
-import Spinner from "../components/Spinner";
 import { useNavigate } from "react-router-dom";
+import { FaSignInAlt } from "react-icons/fa";
+import { useSelector, useDispatch } from "react-redux";
+import { login } from "../features/auth/authSlice";
+import Spinner from "../components/Spinner";
 
-const Login = () => {
+function Login() {
   const [formData, setFormData] = useState({
-    name: "",
     email: "",
     password: "",
   });
-  const { email, password } = formData;
-  const navigate = useNavigate(); 
-  const dispatch = useDispatch();
 
-  const { user, isError, isLoading, isSuccess, message } = useSelector(
-    (state) => state.auth
-  );
-  useEffect(() => {
-    if (isError) {
-      toast.error(message);
-    } else {
-      // Redirect when succesfully
-      if (isSuccess || user) {
-        navigate("/");
-      }
-    }
-    dispatch(reset());
-  }, [isError, isSuccess, user, message, navigate, dispatch]);
+  const { email, password } = formData;
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const { isLoading } = useSelector((state) => state.auth);
+
   const onChange = (e) => {
     setFormData((prevState) => ({
       ...prevState,
       [e.target.name]: e.target.value,
     }));
   };
+
+  // NOTE: no need for useEffect here as we can catch the
+  // AsyncThunkAction rejection in our onSubmit or redirect them on the
+  // resolution
+  // Side effects shoulld go in event handlers where possible
+  // source: - https://beta.reactjs.org/learn/keeping-components-pure#where-you-can-cause-side-effects
+
   const onSubmit = (e) => {
     e.preventDefault();
+
     const userData = {
       email,
       password,
     };
 
-    dispatch(login(userData));
+    dispatch(login(userData))
+      .unwrap()
+      .then((user) => {
+        // NOTE: by unwrapping the AsyncThunkAction we can navigate the user after
+        // getting a good response from our API or catch the AsyncThunkAction
+        // rejection to show an error message
+        toast.success(`Logged in as ${user.name}`);
+        navigate("/");
+      })
+      .catch(toast.error);
   };
+
   if (isLoading) {
     return <Spinner />;
   }
+
   return (
     <>
       <section className="heading">
         <h1>
-          <FaSignInAlt />
-          Login
+          <FaSignInAlt /> Login
         </h1>
-        <p>Please log in to continue</p>
-        <section className="form">
-          <form onSubmit={onSubmit}>
-            <div className="form-group">
-              <input
-                required
-                onChange={onChange}
-                type={email}
-                name="email"
-                id="email"
-                className="form-control"
-                placeholder="Enter your email"
-              />
-            </div>
-            <div className="form-group">
-              <input
-                required
-                onChange={onChange}
-                type={password}
-                name="password"
-                id="password"
-                className="form-control"
-                placeholder="Enter your password"
-              />
-            </div>
+        <p>Please log in to get support</p>
+      </section>
 
-            <div className="form-group">
-              <button className="btn btn-block">Submit</button>
-            </div>
-          </form>
-        </section>
+      <section className="form">
+        <form onSubmit={onSubmit}>
+          <div className="form-group">
+            <input
+              type="email"
+              className="form-control"
+              id="email"
+              name="email"
+              value={email}
+              onChange={onChange}
+              placeholder="Enter your email"
+              required
+            />
+          </div>
+          <div className="form-group">
+            <input
+              type="password"
+              className="form-control"
+              id="password"
+              name="password"
+              value={password}
+              onChange={onChange}
+              placeholder="Enter password"
+              required
+            />
+          </div>
+          <div className="form-group">
+            <button className="btn btn-block">Submit</button>
+          </div>
+        </form>
       </section>
     </>
   );
-};
+}
 
 export default Login;
